@@ -1,6 +1,3 @@
-Here’s the updated **README** content:  
-
-```markdown
 # Chat with PDF  
 
 Chat with PDF is an LLM app that utilizes **Retrieval Augmented Generation (RAG)** to enable meaningful interaction with PDF files. Powered by **Llama 3.2** running locally, the app provides accurate answers to your questions based on the content of the uploaded PDF.  
