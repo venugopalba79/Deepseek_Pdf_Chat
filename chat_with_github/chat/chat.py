@@ -12,20 +12,24 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 # Styles from the reference code
 message_style = dict(
-    display="inline-block", 
-    padding="1em", 
+    display="inline-block",
+    padding="1em",
     border_radius="8px",
-    max_width=["30em", "30em", "50em", "50em", "50em", "50em"]
+    max_width=["30em", "30em", "50em", "50em", "50em", "50em"],
 )
+
 
 @dataclass
 class QA:
     """A question and answer pair."""
+
     question: str
     answer: str
 
+
 class LoadingIcon(rx.Component):
     """A custom loading icon component."""
+
     library = "react-loading-icons"
     tag = "SpinningCircles"
     stroke: rx.Var[str]
@@ -39,10 +43,13 @@ class LoadingIcon(rx.Component):
     def get_event_triggers(self) -> dict:
         return {"on_change": lambda status: [status]}
 
+
 loading_icon = LoadingIcon.create
+
 
 class State(rx.State):
     """The app state."""
+
     chats: List[List[QA]] = [[]]
     current_chat: int = 0
     processing: bool = False
@@ -65,27 +72,23 @@ class State(rx.State):
                             "max_tokens": 250,
                             "temperature": 0.5,
                             "stream": True,
-                            "base_url": 'http://localhost:11434'
-                        }
+                            "base_url": "http://localhost:11434",
+                        },
                     },
                     "vectordb": {"provider": "chroma", "config": {"dir": self.db_path}},
                     "embedder": {
                         "provider": "ollama",
                         "config": {
                             "model": "llama3:instruct",
-                            "base_url": 'http://localhost:11434'
-                        }
-                    }
+                            "base_url": "http://localhost:11434",
+                        },
+                    },
                 }
             )
         return State._app_instance
 
     def get_loader(self):
-        return GithubLoader(
-            config={
-                "token": GITHUB_TOKEN
-            }
-        )
+        return GithubLoader(config={"token": GITHUB_TOKEN})
 
     @rx.event(background=True)
     async def process_question(self, form_data: dict):
@@ -94,7 +97,7 @@ class State(rx.State):
             return
 
         question = form_data["question"]
-        
+
         async with self:
             self.processing = True
             self.chats[self.current_chat].append(QA(question=question, answer=""))
@@ -138,10 +141,11 @@ class State(rx.State):
                 self.processing = False
                 self.is_loading = False
                 yield
-    
+
     def update_repo(self, repo: str):
         """Update the repo"""
         self.repo = repo
+
 
 def message(qa: QA) -> rx.Component:
     """A single question/answer message."""
@@ -169,13 +173,11 @@ def message(qa: QA) -> rx.Component:
         width="100%",
     )
 
+
 def chat() -> rx.Component:
     """List all the messages in a conversation."""
     return rx.vstack(
-        rx.box(
-            rx.foreach(State.chats[State.current_chat], message),
-            width="100%"
-        ),
+        rx.box(rx.foreach(State.chats[State.current_chat], message), width="100%"),
         py="8",
         flex="1",
         width="100%",
@@ -185,6 +187,7 @@ def chat() -> rx.Component:
         overflow="hidden",
         padding_bottom="5em",
     )
+
 
 def action_bar() -> rx.Component:
     """The action bar to send a new message."""
@@ -209,9 +212,8 @@ def action_bar() -> rx.Component:
                         ),
                         type_="submit",
                         disabled=State.processing,
-                        bg=rx.color("accent", 9),
-                        color="white",
-                        _hover={"bg": rx.color("accent", 10)},
+                        variant="surface",
+                        cursor="pointer",
                     ),
                     align_items="center",
                     spacing="3",
@@ -229,47 +231,138 @@ def action_bar() -> rx.Component:
         padding_y="16px",
         backdrop_filter="auto",
         backdrop_blur="lg",
-        border_top=f"1px solid {rx.color('mauve', 3)}",
-        background_color=rx.color("mauve", 2),
+        # border_top=f"1px solid {rx.color('mauve', 3)}",
+        # background_color=rx.color("mauve", 2),
         width="100%",
     )
 
+
+def nav_icon(component: rx.Component) -> rx.badge:
+    return rx.badge(
+        component,
+        color_scheme="gray",
+        variant="soft",
+        width="21px",
+        height="21px",
+        display="flex",
+        align_items="center",
+        justify_content="center",
+        background="none",
+    )
+
+
+theme = nav_icon(
+    rx.el.button(
+        rx.color_mode.icon(
+            light_component=rx.icon(
+                "moon",
+                size=14,
+                color=rx.color("slate", 12),
+            ),
+            dark_component=rx.icon(
+                "sun",
+                size=14,
+                color=rx.color("slate", 12),
+            ),
+        ),
+        on_click=rx.toggle_color_mode,
+    ),
+)
+
+
 def index():
-    return rx.box(
+    return rx.vstack(
+        rx.hstack(
+            rx.hstack(
+                rx.heading("Chat with GitHub Repository", size="2", weight="medium"),
+            ),
+            rx.hstack(
+                theme,
+            ),
+            border_bottom=f"1px solid {rx.color('gray', 5)}",
+            width="100%",
+            height="3em",
+            bg=rx.color("gray", 2),
+            position="absolute",
+            top="0",
+            left="0",
+            align="center",
+            justify="between",
+            padding="1em",
+        ),
         rx.vstack(
-            rx.heading("Chat with GitHub Repository 💬"),
-            rx.text("Chat with GitHub repositories using Llama-3.2 running with Ollama"),
-
-            rx.input(
-                placeholder="Enter the Github Repo",
-                value=State.repo,
-                on_change=State.update_repo,
-                width="300px"
+            rx.vstack(
+                rx.heading(
+                    "Chat with GitHub Repositories",
+                    size="7",
+                    weight="medium",
+                    align="center",
+                    width="100%",
+                ),
+                rx.heading(
+                    "Llama-3.2 running with Ollama",
+                    size="5",
+                    weight="medium",
+                    align="center",
+                    width="100%",
+                    color=rx.color("slate", 11),
+                ),
+                width="100%",
+                spacing="1",
             ),
-
+            rx.divider(height="2em", opacity="0"),
+            rx.hstack(
+                rx.text(
+                    "Github Repo",  # Use last word of label as display text
+                    size="1",
+                    weight="bold",
+                    color=rx.color("slate", 10),
+                    width="120px",
+                    border_right="1px solid gray",
+                    margin_right="0.5em",
+                ),
+                rx.input(
+                    value=State.repo,
+                    on_change=State.update_repo,
+                    width="100%",
+                    variant="soft",
+                    bg="transparent",
+                    outline="none",
+                ),
+                align="center",
+                width="100%",
+                border_bottom=f"0.75px solid {rx.color('gray', 4)}",
+            ),
+            rx.divider(height="0.5em", opacity="0"),
             rx.button(
-                "Process", 
+                "Process",
                 on_click=State.handle_repo_input,
-                color_scheme="blue",
                 loading=State.is_loading,
-                width="fit-content",
+                width="100%",
+                variant="surface",
+                cursor="pointer",
             ),
-            
-                # Status message
-                rx.text(State.upload_status),
-                # Chat interface
+            rx.divider(height="2em", opacity="0"),
+            rx.vstack(
+                rx.text(State.upload_status, size="1", align="center", width="100%"),
                 chat(),
                 action_bar(),
-                padding="2em",
-                spacing="2",
-                align_items="center",
+                width="100%",
             ),
             width="100%",
-        )
+            max_width="30em",
+        ),
+        width="100%",
+        height="100vh",
+        align="center",
+        justify="center",
+    )
 
 
 app = rx.App()
-app.add_page(index,
+app.add_page(
+    index,
     title="GitHub Repository Chat",
     description="Chat with GitHub repositories using AI",
-    route="/")
+    route="/",
+)
